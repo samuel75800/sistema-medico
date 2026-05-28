@@ -1,0 +1,60 @@
+services:
+
+  app:
+    build: .
+    container_name: hospital_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: "Hospital"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8080
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: hospital
+      DB_USERNAME: hospital_user
+      DB_PASSWORD: hospital_pass
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+
+  db:
+    image: mysql:8.0
+    container_name: hospital_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: hospital
+      MYSQL_USER: hospital_user
+      MYSQL_PASSWORD: hospital_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: hospital_pma
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: hospital_user
+      PMA_PASSWORD: hospital_pass
+    depends_on:
+      - db
+
+volumes:
+  db_data:
